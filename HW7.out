@@ -1,0 +1,271 @@
+SQL>
+SQL> -- Execute the script file. --
+SQL> start &&1
+SQL> -- Create tables
+SQL> CREATE TABLE STUDENT (
+  2      Student_number INT PRIMARY KEY,
+  3      Name VARCHAR2(50) NOT NULL,
+  4      Class INT,
+  5      Major VARCHAR2(10)
+  6  );
+
+Table created.
+
+SQL>
+SQL> CREATE TABLE COURSE (
+  2      Course_number VARCHAR2(10) PRIMARY KEY,
+  3      Course_name VARCHAR2(50) UNIQUE,
+  4      Credit_hours INT,
+  5      Department VARCHAR2(10)
+  6  );
+
+Table created.
+
+SQL>
+SQL> CREATE TABLE PREREQUISITE (
+  2      Course_number VARCHAR2(10),
+  3      Prerequisite_number VARCHAR2(10),
+  4      PRIMARY KEY (Course_number, Prerequisite_number),
+  5      FOREIGN KEY (Course_number) REFERENCES COURSE(Course_number>
+  6      FOREIGN KEY (Prerequisite_number) REFERENCES COURSE(Course_>
+  7  );
+
+Table created.
+
+SQL>
+SQL> CREATE TABLE SECTION (
+  2      Section_identifier INT PRIMARY KEY,
+  3      Course_number VARCHAR2(10) NOT NULL,
+  4      Semester VARCHAR2(10) NOT NULL,
+  5      Year INT NOT NULL,
+  6      Instructor VARCHAR2(50),
+  7      FOREIGN KEY (Course_number) REFERENCES COURSE(Course_number)
+  8  );
+
+Table created.
+
+SQL>
+SQL> CREATE TABLE GRADE_REPORT (
+  2      Student_number INT,
+  3      Section_identifier INT,
+  4      Grade CHAR(1),
+  5      PRIMARY KEY (Student_number, Section_identifier),
+  6      FOREIGN KEY (Student_number) REFERENCES STUDENT(Student_num>
+  7      FOREIGN KEY (Section_identifier) REFERENCES SECTION(Section>
+  8  );
+Table created.
+
+SQL>
+SQL> COMMIT;
+
+Commit complete.
+
+SQL>
+SQL> -- Insert into STUDENT
+SQL> INSERT INTO STUDENT VALUES (17, 'Smith', 1, 'CS');
+
+1 row created.
+
+SQL> INSERT INTO STUDENT VALUES (8, 'Brown', 2, 'CS');
+
+1 row created.
+
+SQL>
+SQL> -- Insert into COURSE
+SQL> INSERT INTO COURSE VALUES ('CS1310', 'Intro to Computer Science>
+
+1 row created.
+
+SQL> INSERT INTO COURSE VALUES ('CS3320', 'Data Structures', 4, 'CS'>
+
+1 row created.
+
+SQL> INSERT INTO COURSE VALUES ('MATH2410', 'Discrete Mathematics', >
+
+1 row created.
+
+SQL> INSERT INTO COURSE VALUES ('CS3380', 'Database', 3, 'CS');
+
+1 row created.
+
+SQL>
+SQL> -- Insert into PREREQUISITE
+SQL> INSERT INTO PREREQUISITE VALUES ('CS3380', 'CS3320');
+
+1 row created.
+
+SQL> INSERT INTO PREREQUISITE VALUES ('CS3380', 'MATH2410');
+
+1 row created.
+
+SQL> INSERT INTO PREREQUISITE VALUES ('CS3320', 'CS1310');
+
+1 row created.
+
+SQL>
+SQL> -- Insert  into SECTION
+SQL> INSERT INTO SECTION VALUES (85, 'MATH2410', 'Fall', 2007, 'King>
+
+1 row created.
+
+SQL> INSERT INTO SECTION VALUES (92, 'CS1310', 'Fall', 2007, 'Anders>
+
+1 row created.
+
+SQL> INSERT INTO SECTION VALUES (102, 'CS3320', 'Spring', 2008, 'Knu>
+
+1 row created.
+
+SQL> INSERT INTO SECTION VALUES (112, 'MATH2410', 'Fall', 2008, 'Cha>
+
+1 row created.
+
+SQL> INSERT INTO SECTION VALUES (119, 'CS1310', 'Fall', 2008, 'Ander>
+
+1 row created.
+
+SQL> INSERT INTO SECTION VALUES (135, 'CS3380', 'Fall', 2008, 'Stone>
+
+1 row created.
+
+SQL>
+SQL> -- Insert into GRADE_REPORT
+SQL> INSERT INTO GRADE_REPORT VALUES (17, 112, 'B');
+
+1 row created.
+
+SQL> INSERT INTO GRADE_REPORT VALUES (17, 119, 'C');
+
+1 row created.
+
+SQL> INSERT INTO GRADE_REPORT VALUES (8, 85, 'A');
+
+1 row created.
+
+SQL> INSERT INTO GRADE_REPORT VALUES (8, 92, 'A');
+
+1 row created.
+
+SQL> INSERT INTO GRADE_REPORT VALUES (8, 102, 'B');
+
+1 row created.
+
+SQL> INSERT INTO GRADE_REPORT VALUES (8, 135, 'A');
+
+1 row created.
+
+SQL>
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> -- Retrieve name and grade of students who took 'Discrete Mathematics' in Fall 2008
+SQL> SELECT S.Name, G.Grade
+  2  FROM GRADE_REPORT G
+  3  JOIN STUDENT S ON G.Student_number = S.Student_number
+  4  JOIN SECTION SEC ON G.Section_identifier = SEC.Section_identifier
+  5  JOIN COURSE C ON SEC.Course_number = C.Course_number
+  6  WHERE C.Course_name = 'Discrete Mathematics'
+  7    AND SEC.Semester = 'Fall'
+  8    AND SEC.Year = 2008;
+
+NAME                                               G
+-------------------------------------------------- -
+Smith                                              B
+
+SQL>
+SQL> -- Update grade
+SQL> UPDATE GRADE_REPORT
+  2  SET Grade = 'A'
+  3  WHERE Student_number = 8 AND Section_identifier = 102;
+
+1 row updated.
+
+SQL>
+SQL> ROLLBACK;
+
+Rollback complete.
+
+SQL>
+SQL> -- Violate primary key constraint
+SQL> INSERT INTO STUDENT VALUES (8, 'Joe', 6, 'CS');
+INSERT INTO STUDENT VALUES (8, 'Joe', 6, 'CS')
+*
+ERROR at line 1:
+ORA-00001: unique constraint (NSTEITZ.SYS_C0076901) violated
+Help: https://docs.oracle.com/error-help/db/ora-00001/
+
+
+SQL>
+SQL> -- Violate entity integrity (NULL value in non-null column)
+SQL> INSERT INTO SECTION VALUES (195, NULL, 'fall', 2007, 'JoeShmo');
+INSERT INTO SECTION VALUES (195, NULL, 'fall', 2007, 'JoeShmo')
+                                 *
+ERROR at line 1:
+ORA-01400: cannot insert NULL into ("NSTEITZ"."SECTION"."COURSE_NUMBER")
+Help: https://docs.oracle.com/error-help/db/ora-01400/
+
+
+SQL>
+SQL> -- Violate referential integrity on DELETE
+SQL> DELETE FROM STUDENT WHERE Student_number = 17;
+DELETE FROM STUDENT WHERE Student_number = 17
+*
+ERROR at line 1:
+ORA-02292: integrity constraint (NSTEITZ.SYS_C0076913) violated - child record
+found
+Help: https://docs.oracle.com/error-help/db/ora-02292/
+
+
+SQL>
+SQL> -- Violate primary key uniqueness on UPDATE
+SQL> UPDATE STUDENT SET Student_number = 8 WHERE Student_number = 17;
+UPDATE STUDENT SET Student_number = 8 WHERE Student_number = 17
+*
+ERROR at line 1:
+ORA-00001: unique constraint (NSTEITZ.SYS_C0076901) violated
+Help: https://docs.oracle.com/error-help/db/ora-00001/
+
+
+SQL>
+SQL> -- Violate referential integrity on UPDATE
+SQL> UPDATE GRADE_REPORT SET Student_number = 5 WHERE Student_number = 8;
+UPDATE GRADE_REPORT SET Student_number = 5 WHERE Student_number = 8
+*
+ERROR at line 1:
+ORA-02291: integrity constraint (NSTEITZ.SYS_C0076913) violated - parent key
+not found
+Help: https://docs.oracle.com/error-help/db/ora-02291/
+
+
+SQL>
+SQL> -- Drop tables in correct order
+SQL> DROP TABLE GRADE_REPORT;
+
+Table dropped.
+
+SQL> DROP TABLE SECTION;
+
+Table dropped.
+
+SQL> DROP TABLE PREREQUISITE;
+
+Table dropped.
+
+SQL> DROP TABLE COURSE;
+
+Table dropped.
+
+SQL> DROP TABLE STUDENT;
+
+Table dropped.
+
+SQL>
+SQL> -- Final commit
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SQL>
+SQL> -- Restore the options to their default values. --
+SQL> spool off
